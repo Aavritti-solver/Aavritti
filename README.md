@@ -1,25 +1,28 @@
-Aavritti
+# Aavritti
 
 Aavritti is a FEniCS-based Helmholtz solver developed at IIT Bombay by Vighnesh JR, who joined in 2021 as an Aerospace Engineering student. Derived from the Helmholtz package of the dynX module at TU Munich, Aavritti is designed to solve:
 
-    Acoustic modes using the Helmholtz equation.
-    Acoustic response towards flame (planned for future implementation).
+- Acoustic modes using the Helmholtz equation.
+- Acoustic response towards flame (planned for future implementation).
 
-Setup
+## Additional Softwares required
+1. **ParaView**: A Linux-based freeware for visualization, compatible with FEniCS. [ParaView](https://www.paraview.org/)
+2. **Gmsh**: A tool for naming domains, boundaries, and meshing. [Gmsh](https://gmsh.info/)
+3. **FreeCAD**: CAD software for creating geometries. [FreeCAD](https://www.freecad.org/)
+## Setup
+- Download: Get the entire directory.
+- Conda Environments:
+  1. One for FEniCS dolfin and UFL packages.
+  2. Another for PETSc and SLEPc with `numpy.complex128` datatype support.
+- TestCase Folder: Create with subfolders: `mesh`, `baseflow`, `result`.
+- Boundary Conditions: `Create/edit _boundary.py` files in `Executables/Boundary_Conditions`.
 
-    Download: Get the entire directory.
-    Conda Environments:
-        One for FEniCS dolfin and UFL packages.
-        Another for PETSc and SLEPc with complex128 datatype support.
-    TestCase Folder: Create with subfolders: mesh, baseflow, result.
-    Boundary Conditions: Create/edit _boundary.py files in Executables/Boundary_Conditions.
+## Execution
 
-Execution
+- Run the executable in the FEniCS environment (post-processing disabled) to build weak form matrices and save them.
+- Run the same file in the complex PETSc environment to solve the FEM problem and save the solution.
+- Run the executable again in the FEniCS environment (post-processing enabled) to convert the solution to .xdmf format for ParaView visualization.
 
-    Run the executable in the FEniCS environment (post-processing disabled) to build weak form matrices and save them.
-    Run the same file in the complex PETSc environment to solve the FEM problem and save the solution.
-    Run the executable again in the FEniCS environment (post-processing enabled) to convert the solution to .xdmf format for ParaView visualization.
-
-Acknowledgements
+## Acknowledgements
 
 Developed under the guidance of Professor Wolfgang Polifke at TU Munich's Thermo-Fluid Dynamics group. The dynX module, from which Aavritti is derived, was developed by Philipp Brokof (MSc.) and Gregoire Varillon (PhD), who supervised the author's internship at TUM
