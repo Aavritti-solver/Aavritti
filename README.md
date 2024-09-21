@@ -1,5 +1,7 @@
 # Aavritti
 
+![Black   Blue Minimalist Modern Initial Font Logo](https://github.com/user-attachments/assets/80a11975-0550-4d68-ac50-3d89b951425e)
+
 Aavritti is a FEniCS-based Helmholtz solver developed at IIT Bombay by Vighnesh JR, who joined in 2021 as an Aerospace Engineering student. Derived from the Helmholtz package of the dynX module at TU Munich, Aavritti is designed to solve:
 
 - Acoustic modes using the Helmholtz equation.
