@@ -6,8 +6,10 @@ Aavritti is a FEniCS-based Helmholtz solver developed at IIT Bombay by Vighnesh 
 
 - Acoustic modes using the Helmholtz equation.
 - Acoustic response towards flame (planned for future implementation).
-# Latest Feature!!!
-Added new potential flow solver module which will be integrated with acoustic solver for mean flow analysis.
+# Latest Feature!!
+- Mean Flow acoustic modal analysis
+- Preliminary model for Aeroacoustics included : `Ffwocs William Hawkings Model` and `Lighthill Model`
+
 
 ## Additional Softwares required
 1. **ParaView**: A Linux-based freeware for visualization, compatible with FEniCS. [ParaView](https://www.paraview.org/)
