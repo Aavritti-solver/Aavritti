@@ -94,79 +94,69 @@ if(str(PETSc.ScalarType) == "<class 'numpy.float64'>"):
         # Save Forcing as npz file
         np.savez(settings.result_folder + '/f', f = f.get_local())
 
-if is_post_process:
-    print("Postprocessing...")
+    if is_post_process:
+        print("Postprocessing...")
 
-    # Setting Boundary Condition
-    equation.set_boundary_conditions(settings, geometry)
+        # Set Boundary Condition
+        equation.set_boundary_conditions(settings, geometry)
 
-    with open(settings.result_folder + "/impedances.txt", "w") as file:
-        file.write("Frequency \t Re(Z) \t Im(Z) \n")
+        with open(settings.result_folder + "/reflectivity.txt", "w") as file:
+        file.write("Frequency \t R \t phi \n")
 
         for w in settings.values["omega_sweep"]:
-            print(f"Processing frequency: {0.5 * w / np.pi} Hz")
+            f = 0.5 * w / np.pi
+            print(f"Processing frequency: {f} Hz")
 
             # Load pressure solution
-            p = np.load(settings.result_folder + f"/p{int(0.5 * w / np.pi)}.npz")["p"]
+            p = np.load(settings.result_folder + f"/solutions/p{int(f)}.npz")["p"]
             equation.p_real.vector().set_local(np.real(p[equation.space.dofmap().dofs()]))
             equation.p_imag.vector().set_local(np.imag(p[equation.space.dofmap().dofs()]))
 
-            # Create interpolators
+            # Interpolators
             p_real_interp = equation.p_real
             p_imag_interp = equation.p_imag
             p_real_interp.set_allow_extrapolation(True)
             p_imag_interp.set_allow_extrapolation(True)
 
-            # Define the measurement plane (z = 0.75)
-            measurement_plane_location = 0.75
-            threshold = 1e-4  # Small tolerance
+            # Sample along z-axis: z from 0.75 to 0.0, x = 0, y = 0
+            num_points = 100
+            z_vals = np.linspace(0.0, 0.75, num_points)
+            x_fixed = 0.0
+            y_fixed = 0.0
 
-            # Get points inside the domain near z = 0.75
-            probe_points = []
-            for cell in cells(geometry.mesh):
-                coords = np.array(cell.get_vertex_coordinates())  # Convert to NumPy array
-                coords = coords.reshape(len(coords) // 3, 3)  # Manually reshape (each row = [x, y, z])
+            pressure_mags = []
+            complex_pressures = []
 
-                if np.any(np.abs(coords[:, 2] - measurement_plane_location) < threshold):
-                    for v in coords:
-                        if np.abs(v[2] - measurement_plane_location) < threshold:
-                            probe_points.append(v)
+            for z in z_vals:
+                pt = Point(x_fixed, y_fixed, z)
+                p_real = p_real_interp(pt)
+                p_imag = p_imag_interp(pt)
+                p_complex = p_real + 1j * p_imag
+                complex_pressures.append(p_complex)
+                pressure_mags.append(np.abs(p_complex))
 
-            probe_points = np.array(probe_points)
+            pressure_mags = np.array(pressure_mags)
+            complex_pressures = np.array(complex_pressures)
 
-            if len(probe_points) == 0:
-                print(f"WARNING: No valid probe points found near z = {measurement_plane_location}. Skipping this frequency.")
+            if len(pressure_mags) == 0:
+                print(f"WARNING: No valid pressure points at frequency {f} Hz")
+                file.write(f"{f} \t nan \t nan \n")
                 continue
 
-            print(f"Using {len(probe_points)} probe points for integration.")
+            p_max = np.max(pressure_mags)
+            p_min = np.min(pressure_mags)
+            0 = z_vals[np.argmin(pressure_mags)]
 
-            # Compute pressure at probe points
-            p_measured_vals = np.array([
-                p_real_interp(Point(pt)) + 1j * p_imag_interp(Point(pt))
-                for pt in probe_points
-            ])
+            # Computing reflectivity magnitude and phase
+            a = (p_max + p_min) / 2
+            b = (p_max - p_min) / 2
 
-            # Compute gradients using finite differences (only inside the domain)
-            dp_measured_vals = []
-            dx = 1e-4  # Small step size
+            R = b / a if a != 0 else 0
+            k = w / settings.constants["c0"]
+            phi = np.pi - 2 * k * (0.75 - z0)
 
-            for pt in probe_points:
-                x, y, z = pt
-                dp_dx = (p_real_interp(Point(x + dx, y, z)) - p_real_interp(Point(x - dx, y, z))) / (2 * dx)
-                dp_dy = (p_real_interp(Point(x, y + dx, z)) - p_real_interp(Point(x, y - dx, z))) / (2 * dx)
-                dp_dz = (p_real_interp(Point(x, y, z + dx)) - p_real_interp(Point(x, y, z - dx))) / (2 * dx)
-                dp_measured_vals.append(dp_dx + dp_dy + dp_dz)
+            file.write(f"{f:.6f} \t {R:.6f} \t {phi:.6f}\n")
 
-            dp_measured_vals = np.array(dp_measured_vals)
-
-            if np.all(np.abs(dp_measured_vals) == 0):
-                print(f"WARNING, step skipped at w = {w}")
-                file.write(f"{0.5 * w / np.pi} \t inf \t inf \n")
-                continue
-
-            # Compute impedance
-            Z = 1j * w * np.sum(p_measured_vals) / (settings.constants['c0'] * np.sum(dp_measured_vals))
-            file.write(f"{0.5 * w / np.pi} \t {np.real(Z)} \t {np.imag(Z)}\n")
 
 if str(PETSc.ScalarType) == "<class 'numpy.complex128'>":
     print("Complex PETSc.")
