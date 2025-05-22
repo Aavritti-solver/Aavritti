@@ -55,3 +55,22 @@ class BasicRotorAcoustics(FWH_Acoustics):
         self.set_open_air_boundary(geometry.ds(settings.boundary["air"]))
         self.set_source_surface(geometry.ds(settings.boundary["source"]))
         self.set_wall_boundary(geometry.ds(settings.boundary["wall"]))
+
+class ExperimentSetupOrifice(SpeakerAcoustics):
+    '''
+    Designed for BTP2 by vighnesh J.R. for impedance measurement of orifices
+    - Orifice   : p = 0
+    - Walls     : (∇p).n = 0
+    - speaker   : (∇p).n = i(ω/c0)p - 2iωρF
+    - computed surface : where orifice impedance is measured
+    '''
+    def set_boundary_conditions(self,settings,geometry):
+        BCmethod = "geometric"
+        self.bcs_homogeneous = [
+
+            # Orifice
+            DirichletBC(self.space, Constant(0.0), geometry.boundaries, settings.boundary["orifice"],    BCmethod)
+
+            # Eat 5 star and do nothing for the walls
+        ]
+        self.set_speaker_boundary(geometry.ds(settings.boundary["speaker"]))
